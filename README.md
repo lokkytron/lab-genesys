@@ -66,7 +66,7 @@ This lab is my personal DevOps arena… feel free to claim it as your battlegrou
 
 ```bash
 ./genesys.sh
-
+```
 This will:
 -Perform envsubst of several template files
 -Deploy Docker containers and volumes
@@ -87,4 +87,4 @@ This will:
 
 ## 📖 References
 
-See infra/README.md for detailed lab infrastructure information
+See [Infra README](infra/README.md) for detailed lab infrastructure information
