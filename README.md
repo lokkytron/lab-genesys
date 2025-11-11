@@ -49,18 +49,18 @@ This lab is my personal DevOps arena… feel free to claim it as your battlegrou
 
 ## ⚙️  Components
 
-- **Docker Containers**: Proxy, CoreDNS, CI/CD stack (Jenkins, Gitea), Smallstep CA, Registry  
-- **Libvirt VMs**: Kubernetes control-plane and worker nodes  
-- **Kubernetes Cluster**: Includes NGINX Ingress Controller, MetalLB, Flannel CNI, Local-path storage, monitoring & logging stack  
-- **Automation**:  
-  - `genesys.sh` orchestrates environment deployment  
-  - Ansible playbooks in `infra/` handle VM preparation, K8s setup, and application deployment  
+- **Docker Containers**: Proxy, CoreDNS, CI/CD stack (Jenkins, Gitea), Smallstep CA, Registry
+- **Libvirt VMs**: Kubernetes control-plane and worker nodes
+- **Kubernetes Cluster**: Includes NGINX Ingress Controller, MetalLB, Flannel CNI, Local-path storage, monitoring & logging stack
+- **Automation**:
+  - `genesys.sh` orchestrates environment deployment
+  - Ansible playbooks in `infra/` handle VM preparation, K8s setup, and application deployment
 
 ---
 
 ## 🚀 Deployment
 
-1. Prepare host machine with required packages and network configuration  
+1. Prepare host machine with required packages and network configuration
 2. If you want to change VMs names or network ranges to fit in your infra, update /.genesys.sh with your environment settings
 3. Run the main deployment script:
 
