@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: testing
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: smallstep-acme
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - testing.lab.loc
+    secretName: test-smallstep-tls
+  rules:
+  - host: testing.lab.loc
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: placeholder-service
+            port:
+              number: 80

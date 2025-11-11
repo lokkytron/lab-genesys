@@ -1,0 +1,23 @@
+---
+- name: Load overlay module
+  modprobe:
+    name: overlay
+    state: present
+  become: true
+
+- name: Load br_netfilter module
+  modprobe:
+    name: br_netfilter
+    state: present
+  become: true
+
+- name: Persist kernel modules for Kubernetes
+  copy:
+    dest: /etc/modules-load.d/k8s.conf
+    content: |
+      overlay
+      br_netfilter
+    owner: root
+    group: root
+    mode: '0644'
+  become: true

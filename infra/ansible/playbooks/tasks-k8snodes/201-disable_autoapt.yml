@@ -1,0 +1,10 @@
+- name: Disable automatic apt services
+  become: true
+  shell: |
+    systemctl stop apt-daily.timer apt-daily-upgrade.timer
+    systemctl kill --kill-who=all apt-daily.service apt-daily-upgrade.service || true
+    systemctl disable apt-daily.timer apt-daily-upgrade.timer
+    systemctl mask apt-daily.service apt-daily-upgrade.service
+    systemctl stop unattended-upgrades.service
+    systemctl disable unattended-upgrades.service
+    systemctl mask unattended-upgrades.service

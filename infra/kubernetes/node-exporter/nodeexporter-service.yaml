@@ -1,0 +1,14 @@
+# nodeexporter-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-exporter
+  namespace: telemetry
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: node-exporter  # This must match the label on your Node Exporter pods
+  ports:
+    - name: http-metrics
+      port: 9100
+      targetPort: 9100

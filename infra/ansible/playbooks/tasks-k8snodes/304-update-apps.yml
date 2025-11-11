@@ -1,0 +1,50 @@
+---
+- name: Update currently installed apps
+  block:
+
+    - name: Wait for MetalLB webhook to be ready
+      kubernetes.core.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        name: controller
+        namespace: metallb-system
+      register: metallb_deploy
+      until: >
+        metallb_deploy.resources[0].status.conditions
+        | selectattr('type', 'equalto', 'Available')
+        | selectattr('status', 'equalto', 'True')
+        | list
+        | length > 0
+      retries: 24
+      delay: 5
+
+    - name: Wait for cert-manager webhook to be ready
+      kubernetes.core.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        name: cert-manager-webhook
+        namespace: cert-manager
+      register: certmgr_webhook
+      until: >
+        certmgr_webhook.resources[0].status.conditions
+        | selectattr('type', 'equalto', 'Available')
+        | selectattr('status', 'equalto', 'True')
+        | list
+        | length > 0
+      retries: 24
+      delay: 5
+
+    - name: Configure MetalLB IP address pool
+      kubernetes.core.k8s:
+        state: present
+        src: /kubernetes/metallb/metallb-config.yaml
+
+    - name: Configure Cluster Issuer of ACME TLS certs
+      kubernetes.core.k8s:
+        state: present
+        src: /kubernetes/cert-manager/certmanager-clusterissuer.yaml
+
+  delegate_to: localhost
+  run_once: true
+  environment:
+    KUBECONFIG: /kubeconfig/lab-k8s.yaml

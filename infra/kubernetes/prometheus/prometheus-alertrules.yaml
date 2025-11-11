@@ -1,0 +1,101 @@
+# prometheus-alertrules.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: telemetry
+data:
+  alert-rules.yaml: |
+    groups:
+    - name: node-health
+      rules:
+      - alert: NodeDown
+        expr: up{job="node-exporter"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node is down"
+          description: "Prometheus has not received data from a node for 5 minutes."
+
+      - alert: HighMemoryUsage75
+        expr: (node_memory_Active_bytes / node_memory_MemTotal_bytes) > 0.75
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node memory usage > 75%"
+          description: "Memory usage has exceeded 75% for 15 minutes."
+
+      - alert: HighMemoryUsage90
+        expr: (node_memory_Active_bytes / node_memory_MemTotal_bytes) > 0.90
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node memory usage > 90%"
+          description: "Memory usage has exceeded 90% for 5 minutes."
+
+      - alert: MemoryPeak95
+        expr: (node_memory_Active_bytes / node_memory_MemTotal_bytes) > 0.95
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node memory usage peak > 95%"
+          description: "Memory usage has spiked above 95%."
+
+      - alert: HighCPUUsage75
+        expr: (100 - avg(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 75
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node CPU usage > 75%"
+          description: "CPU usage has exceeded 75% for 15 minutes."
+
+      - alert: HighCPUUsage90
+        expr: (100 - avg(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node CPU usage > 90%"
+          description: "CPU usage has exceeded 90% for 5 minutes."
+
+    - name: pod-health
+      rules:
+      - alert: PodCrashLooping
+        expr: kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pod in CrashLoopBackOff"
+          description: "One or more containers are repeatedly crashing."
+
+      - alert: PodErrorState
+        expr: kube_pod_container_status_terminated_reason{reason="Error"} > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod terminated with error"
+          description: "A container has terminated with an error state."
+
+      - alert: PodRestartHigh
+        expr: increase(kube_pod_container_status_restarts_total[10m]) > 5
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod restart count high"
+          description: "A container has restarted more than 5 times in the last 10 minutes."
+
+    - name: logging
+      rules:
+      - alert: ApplicationErrorLogs
+        expr: rate(log_messages_total{level="error"}[5m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "Application is logging errors"
+          description: "Error-level logs detected in the last 5 minutes."

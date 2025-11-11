@@ -1,0 +1,23 @@
+# grafana-datasources.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: telemetry
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus.telemetry.svc.cluster.local
+        access: proxy
+        isDefault: true
+        version: 1
+        editable: true
+      - name: Loki
+        type: loki
+        url: http://loki.telemetry.svc.cluster.local:3100
+        access: proxy
+        version: 1
+        editable: true

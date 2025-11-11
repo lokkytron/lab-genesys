@@ -1,0 +1,20 @@
+- name: Prepare VM for Kubernetes
+  hosts: k8snodes
+  gather_facts: true
+  vars:
+    ansible_user: "{{ jit_username }}"
+    ansible_ssh_private_key_file: "{{ jit_private_key }}"
+    ansible_ssh_common_args: >
+      -o StrictHostKeyChecking=no
+      -o UserKnownHostsFile=/dev/null
+      -o IdentitiesOnly=yes
+      -o PreferredAuthentications=publickey
+  tasks:
+    - import_tasks: 201-disable_autoapt.yml
+    - import_tasks: 202-kernel_modules.yml
+    - import_tasks: 203-sysctl_config.yml
+    - import_tasks: 204-install_containerd.yml
+    - import_tasks: 205-disable_swap.yml
+    - import_tasks: 206-add_k8s_repo.yml
+    - import_tasks: 207-install_k8s_tools.yml
+    - import_tasks: 208-enable_autoapt.yml

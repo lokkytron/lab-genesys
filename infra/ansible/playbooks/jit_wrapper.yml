@@ -1,0 +1,29 @@
+---
+# PREP phase: Running ansible user on LOCALHOST and TARGET to create and setup the JIT-USER
+- name: Pre | generate ephemeral identity and provision on targets
+  hosts: all
+  gather_facts: false
+
+  pre_tasks:
+    - name: Generate JIT username
+      set_fact:
+        jit_username: "{{ jit_username_prefix | default('eph-usr-') }}{{ '%Y%m%d%H%M%S' | strftime }}{{ lookup('password', '/dev/null length=4 chars=ascii_lowercase') }}"
+        cacheable: true
+      delegate_to: localhost
+      run_once: true
+
+  environment:
+    KUBEFOLDER: "{{ KUBEFOLDER }}"
+    KUBECONFIG: "{{ KUBEFOLDER }}"
+
+  tasks:
+    - import_tasks: tasks-jituser/01-init-local.yml
+      delegate_to: localhost
+      run_once: true
+
+    - import_tasks: tasks-jituser/02-init-remote.yml
+
+
+# EXEC phase: Running as JIT-USER it load the playbook to be executed
+- import_playbook: "{{ playbook_file }}"
+

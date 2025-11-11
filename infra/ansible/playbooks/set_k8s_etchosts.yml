@@ -1,0 +1,16 @@
+---
+- name: Ensure Kubernetes node hostnames are in /etc/hosts
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Add individual host entries
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ item }}"
+        state: present
+      loop:
+        - "{{ K8S_MASTER_IP }} {{ K8S_MASTER_HOST }}"
+        - "{{ K8S_WORKER1_IP }} {{ K8S_WORKER1_HOST }}"
+        - "{{ K8S_WORKER2_IP }} {{ K8S_WORKER2_HOST }}"

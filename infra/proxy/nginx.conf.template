@@ -1,0 +1,48 @@
+worker_processes 1;
+load_module modules/ngx_stream_module.so;
+
+
+events {
+  worker_connections 1024;
+}
+
+# TCP passthrough for HTTPS
+stream {
+  upstream ingress_https {
+    # The LB IP and port 443
+    server ${LAB_NET_BASE}.2:443; 
+  }
+
+  server {
+    listen 443;
+    proxy_pass ingress_https;
+    # lets SNI flow through untouched
+    ssl_preread on; 
+  }
+}
+
+http {
+  upstream ingress_http {
+    server ${LAB_NET_BASE}.2:80;
+  }
+
+  server {
+    listen 80;
+    server_name _;
+
+    # Do NOT redirect ACME challenge; pass it to ingress for HTTP-01
+    location ^~ /.well-known/acme-challenge/ {
+      proxy_pass http://ingress_http;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location / {
+      proxy_pass http://ingress_http;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+  }
+}

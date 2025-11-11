@@ -1,0 +1,15 @@
+/infra/kubernetes/alert-manager/alertmanager-deployment.yaml
+/infra/kubernetes/docker-services/docker-services.yaml
+/infra/kubernetes/prometheus/prometheus-ingress.yaml
+/infra/kubernetes/promtail/promtail-configmap.yaml
+/infra/ansible/inventories/lab/group_vars/all.yml
+/infra/kubernetes/grafana/grafana-ingress.yaml
+/infra/kubernetes/metallb/metallb-config.yaml
+/infra/kubernetes/k8s-net.xml
+/infra/coredns/zones/*.db
+/infra/coredns/Corefile
+/infra/proxy/nginx.conf
+/.env
+
+
+

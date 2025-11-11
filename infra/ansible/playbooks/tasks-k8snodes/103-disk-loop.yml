@@ -1,0 +1,118 @@
+---
+#  [[  Create and resize system disk  ]]  
+- name: Copy system disk for {{ node.name }}
+  copy:
+    src: "{{ img_dir }}/ubuntu-24.04-slim.img"
+    dest: "{{ img_dir }}/{{ node.name }}-sys.img"
+    remote_src: true
+  become: true
+
+- name: Resize system disk for {{ node.name }}
+  command: qemu-img resize {{ img_dir }}/{{ node.name }}-sys.img 15G
+  become: true
+
+#  [[  Cloud-init config and ISO creation  ]]  
+- name: Prepare cloud-init workdir for {{ node.name }}
+  file:
+    path: "{{ work_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Read SSH public keys
+  set_fact:
+    user_pubkey: "{{ lookup('file', '/key_exchange/ansible_id_rsa.pub') }}"
+    ca_pubkey: "{{ lookup('file', '/key_exchange/ssh_user_ca_key.pub') }}"
+  delegate_to: localhost
+
+- name: Create user-data for {{ node.name }}
+  copy:
+    dest: "{{ work_dir }}/user-data"
+    content: |
+      #cloud-config
+      hostname: {{ node.name }}
+      manage_etc_hosts: true
+      users:
+        - name: lokkytron
+          groups: sudo
+          sudo: ALL=(ALL) NOPASSWD:ALL
+          shell: /bin/bash
+          lock_passwd: false
+          plain_text_passwd: "BadPass"
+        - name: ansible
+          groups: users
+          ssh_authorized_keys:
+            - "{{ user_pubkey }}"
+          shell: /bin/bash
+          lock_passwd: true
+          passwd: "*"
+
+      write_files:
+        - path: /etc/ssh/ca_user.pub
+          permissions: '0644'
+          owner: root:root
+          content: |
+            {{ ca_pubkey }}
+        - path: /etc/sudoers.d/ansible
+          permissions: '0440'
+          owner: root:root
+          content: |
+            {{ SUDOERS_CONTENT | indent(10) }}
+        - path: /etc/cloud/templates/hosts.debian.tmpl
+          permissions: '0644'
+          owner: root:root
+          content: |
+            127.0.1.1 {{ node.name }}
+            127.0.0.1 localhost
+            ::1 localhost ip6-localhost ip6-loopback
+            ff02::1 ip6-allnodes
+            ff02::2 ip6-allrouters
+            {{ K8S_MASTER_IP }} {{ K8S_MASTER_HOST }}
+            {{ K8S_WORKER1_IP }} {{ K8S_WORKER1_HOST }}
+            {{ K8S_WORKER1_IP }} {{ K8S_WORKER2_HOST }}
+
+      ssh_pwauth: true
+      package_update: true
+      package_upgrade: true
+
+      runcmd:
+        - [ sed, -i, '/^#\?TrustedUserCAKeys/d', /etc/ssh/sshd_config ]
+        - [ sh, -c, 'echo "TrustedUserCAKeys /etc/ssh/ca_user.pub" >> /etc/ssh/sshd_config' ]
+        - [ systemctl, restart, sshd ]
+
+- name: Create meta-data for {{ node.name }}
+  copy:
+    dest: "{{ work_dir }}/meta-data"
+    content: |
+      instance-id: {{ node.name }}-001
+      local-hostname: {{ node.name }}
+
+- name: Create network-config for {{ node.name }}
+  copy:
+    dest: "{{ work_dir }}/network-config"
+    content: |
+      network:
+        version: 2
+        renderer: networkd
+        ethernets:
+          enp1s0:
+            dhcp4: no
+            addresses: [{{ node.ip }}/24]
+            routes:
+              - to: 0.0.0.0/0
+                via: {{ LAB_NET_BASE }}.1
+            nameservers:
+              addresses: [192.168.1.222, 8.8.8.8]
+
+- name: Generate cloud-init ISO for {{ node.name }}
+  shell: |
+    genisoimage -output {{ img_dir }}/{{ node.name }}-cidata.iso \
+      -volid cidata -joliet -rock {{ work_dir }}
+  args:
+    executable: /bin/bash
+  become: true
+
+- name: Clean up workdir for {{ node.name }}
+  file:
+    path: "{{ work_dir }}"
+    state: absent
+

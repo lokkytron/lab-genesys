@@ -1,0 +1,24 @@
+$TTL 3600
+@   IN  SOA ns1.${LAB_DOMAIN}. admin.${LAB_DOMAIN}. (
+        2025091501 ; serial
+        3600       ; refresh
+        1800       ; retry
+        1209600    ; expire
+        3600 )     ; minimum
+    IN  NS  ns1.${LAB_DOMAIN}.
+
+; Nameserver
+ns1 IN  A   ${HOST_IP}   ; Replace with the IP of the host running CoreDNS
+
+; Host entries
+jenkins    IN  A   ${HOST_IP}
+gitea      IN  A   ${HOST_IP}
+registry   IN  A   ${HOST_IP}
+testing    IN  A   ${HOST_IP}
+smallstep  IN  A   ${HOST_IP}
+grafana    IN  A   ${HOST_IP}
+prometheus IN  A   ${HOST_IP}
+aaaa       IN  A   ${HOST_IP}
+bbbb       IN  A   ${HOST_IP}
+cccc       IN  A   ${HOST_IP}
+dddd       IN  A   ${HOST_IP}

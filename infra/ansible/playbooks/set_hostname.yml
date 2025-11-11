@@ -1,0 +1,20 @@
+---
+- name: Set permanent hostname on a target host
+  hosts: all
+  gather_facts: no
+  vars:
+    new_hostname: "default-hostname"
+
+  tasks:
+    - name: Change runtime hostname
+      ansible.builtin.shell: sudo /bin/hostname {{ new_hostname }}
+
+    - name: Persist hostname in /etc/hostname
+      ansible.builtin.shell: echo "{{ new_hostname }}" | sudo /usr/bin/tee /etc/hostname
+
+    - name: Update /etc/hosts to reflect new hostname
+      ansible.builtin.shell: sudo /bin/sed -i "s/^127\.0\.1\.1.*/127.0.1.1   {{ new_hostname }}/" /etc/hosts
+
+    - name: Display confirmation
+      ansible.builtin.debug:
+        msg: "Hostname changed to {{ new_hostname }} on {{ inventory_hostname }}"

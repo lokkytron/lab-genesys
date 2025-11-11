@@ -1,0 +1,20 @@
+---
+- name: Install kubelet, kubeadm, kubectl
+  apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+    update_cache: true
+  become: true
+
+- name: Hold kubelet, kubeadm, kubectl at current version
+  shell: sudo apt-mark hold kubelet kubeadm kubectl
+
+- name: Enable kubelet (will start after kubeadm init/join)
+  systemd:
+    name: kubelet
+    enabled: true
+    state: stopped   # keep stopped until kubeadm configures it
+  become: true

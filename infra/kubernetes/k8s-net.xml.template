@@ -1,0 +1,10 @@
+<network>
+  <name>k8s-net</name>
+  <forward mode="nat"/>
+  <bridge name="br_labkvmnet" stp="on" delay="0"/>
+  <ip address="${LAB_NET_BASE}.1" netmask="255.255.255.0">
+    <dhcp>
+      <range start="${LAB_NET_BASE}.100" end="${LAB_NET_BASE}.200"/>
+    </dhcp>
+  </ip>
+</network>

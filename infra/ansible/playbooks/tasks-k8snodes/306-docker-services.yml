@@ -1,0 +1,19 @@
+---
+- name: Configure ingresses and endpoints to make Docker services reachable
+  block:
+    - name: Create docker-services namespace
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: docker-services
+    - name: Configure Docker containers (endpoints, services and ingresses)
+      kubernetes.core.k8s:
+        state: present
+        src: /kubernetes/docker-services/docker-services.yaml
+  delegate_to: localhost
+  run_once: true
+  environment:
+    KUBECONFIG: /kubeconfig/lab-k8s.yaml

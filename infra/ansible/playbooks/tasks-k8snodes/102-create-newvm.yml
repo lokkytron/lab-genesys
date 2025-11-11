@@ -1,0 +1,26 @@
+---
+- name: Ensure base image is downloaded
+  shell: |
+    mkdir -p {{ img_dir }}
+    if [ ! -f {{ img_dir }}/ubuntu-24.04-slim.img ]; then
+      curl -L -o {{ img_dir }}/ubuntu-24.04-slim.img {{ ubuntu_img_url }}
+    fi
+  args:
+    executable: /bin/bash
+  become: true
+
+- name: Loop over selected nodes (disks)
+  include_tasks: 103-disk-loop.yml
+  loop: "{{ all_nodes }}"
+  loop_control:
+    loop_var: node
+  vars:
+    work_dir: "/tmp/cloudinit-{{ node.name }}-{{ ansible_date_time.epoch }}"
+
+- name: Loop over selected nodes (VMs)
+  include_tasks: 104-newvm-loop.yml
+  loop: "{{ all_nodes }}"
+  loop_control:
+    loop_var: node
+  vars:
+    work_dir: "/tmp/cloudinit-{{ node.name }}-{{ ansible_date_time.epoch }}"

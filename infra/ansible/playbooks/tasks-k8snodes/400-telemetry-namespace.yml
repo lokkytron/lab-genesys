@@ -1,0 +1,32 @@
+---
+- name: Kubernetes Telemetry namespace
+  hosts: localhost
+  become: true
+  gather_facts: true
+  vars:
+    ansible_user: "{{ jit_username }}"
+    ansible_ssh_private_key_file: "{{ jit_private_key }}"
+    ansible_ssh_common_args: >
+      -o StrictHostKeyChecking=no
+      -o UserKnownHostsFile=/dev/null
+      -o IdentitiesOnly=yes
+      -o PreferredAuthentications=publickey
+  environment:
+    KUBEFOLDER: "{{ KUBEFOLDER }}"
+    KUBECONFIG: "{{ KUBECONFIG }}"
+
+  tasks:
+    - name: Create docker-services namespace
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: telemetry
+
+    - import_tasks: 401-promtail-setup.yml
+    - import_tasks: 402-loki-setup.yml
+    - import_tasks: 403-prometheus-setup.yml
+    - import_tasks: 404-grafana-setup.yml
+

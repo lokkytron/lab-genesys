@@ -1,0 +1,25 @@
+---
+- name: Install NGINX Ingress Controller
+  block:
+    - name: Install ingress controller
+      kubernetes.core.k8s:
+        state: present
+        src: https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+
+    - name: Wait for ingress-nginx controller to be ready
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: ingress-nginx
+        label_selectors:
+          - app.kubernetes.io/component=controller
+      register: ctrl_pods
+      until: ctrl_pods.resources | length > 0 and
+             (ctrl_pods.resources | map(attribute='status.containerStatuses') | list | flatten | map(attribute='ready') | select('equalto', true) | length) ==
+             (ctrl_pods.resources | map(attribute='status.containerStatuses') | list | flatten | length)
+      retries: 20
+      delay: 3
+  delegate_to: localhost
+  run_once: true
+  environment:
+    KUBECONFIG: /kubeconfig/lab-k8s.yaml

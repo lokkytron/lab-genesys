@@ -1,0 +1,43 @@
+---
+- name: K8s nodes deployment with ephemeral identity
+  hosts: all
+  gather_facts: true
+  vars:
+    ansible_user: "{{ jit_username }}"
+    ansible_ssh_private_key_file: "{{ jit_private_key }}"
+    ansible_ssh_common_args: >
+      -o StrictHostKeyChecking=no
+      -o UserKnownHostsFile=/dev/null
+      -o IdentitiesOnly=yes
+      -o PreferredAuthentications=publickey
+    lab_path: "{{ LAB_PATH }}"
+    libvirt_packages:
+      - qemu-kvm
+      - libvirt-daemon-system
+      - libvirt-clients
+      - virtinst
+      - qemu-utils
+      - cloud-image-utils
+      - genisoimage
+      - guestmount
+      - bridge-utils
+    ubuntu_img_url: "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+    img_dir: "{{ LIBVIRT_IMAGE_DIR }}"
+    all_nodes:
+      - { ip: "{{ K8S_MASTER_IP }}" , name: "{{ K8S_MASTER_HOST }}" , cores: "2", ram: "4096" }
+      - { ip: "{{ K8S_WORKER1_IP }}", name: "{{ K8S_WORKER1_HOST }}", cores: "2", ram: "3072" }
+      - { ip: "{{ K8S_WORKER2_IP }}", name: "{{ K8S_WORKER2_HOST }}", cores: "2", ram: "3072" }
+
+  tasks:
+    - name: DEBUG - Effective user
+      shell: "echo SSH login: $USER && whoami"
+      changed_when: false
+      register: user_info
+
+    - debug:
+        msg: "{{ user_info.stdout_lines }}"
+
+    - import_tasks: 101-libvirt-setup.yml
+    - import_tasks: 102-create-newvm.yml
+#    - import_tasks: 103-disks-loop.yml will be loop from 102-create-node
+#    - import_tasks: 104-newvm-loop.yml will be loop from 102-create-node

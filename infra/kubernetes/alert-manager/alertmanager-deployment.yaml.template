@@ -1,0 +1,90 @@
+# alertmanager-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: telemetry
+  labels:
+    app: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      serviceAccountName: alertmanager
+      volumes:
+        - name: config-templates
+          configMap:
+            name: alertmanager-config
+            items:
+              - key: alertmanager.yml
+                path: alertmanager.yml
+              - key: discord.tmpl
+                path: discord.tmpl
+        - name: config-final
+          emptyDir: {}
+        - name: templates
+          emptyDir: {}
+      initContainers:
+        - name: config-generator
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              # Just copy the config as-is since we're not substituting Discord URL anymore
+              cp /etc/alertmanager/config-templates/alertmanager.yml /etc/alertmanager/config-final/alertmanager.yml
+              
+              # Copy template files to templates directory
+              cp /etc/alertmanager/config-templates/discord.tmpl /etc/alertmanager/templates/discord.tmpl
+              
+              echo "Config generated successfully"
+              cat /etc/alertmanager/config-final/alertmanager.yml
+          volumeMounts:
+            - name: config-templates
+              mountPath: /etc/alertmanager/config-templates
+            - name: config-final
+              mountPath: /etc/alertmanager/config-final
+            - name: templates
+              mountPath: /etc/alertmanager/templates
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.28.1
+          args:
+            - "--config.file=/etc/alertmanager/config-final/alertmanager.yml"
+            - "--storage.path=/alertmanager"
+            - "--web.external-url=http://alertmanager.${LAB_DOMAIN}"
+            - "--web.route-prefix=/"
+            - "--cluster.listen-address="
+          ports:
+            - name: web
+              containerPort: 9093
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9093
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9093
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: config-final
+              mountPath: /etc/alertmanager/config-final
+            - name: templates
+              mountPath: /etc/alertmanager/templates

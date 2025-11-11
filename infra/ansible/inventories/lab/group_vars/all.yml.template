@@ -1,0 +1,31 @@
+############################################################
+#                  LAB ENVIRONMENT CONFIG                  #
+############################################################
+
+HOST_IP: "${HOST_IP}"
+LAB_PATH: "${LAB_PATH}"
+LAB_DOMAIN: "${LAB_DOMAIN}"
+LAB_NET_BASE: "${LAB_NET_BASE}"
+
+LIBVIRT_NETWORK_NAME: "${LIBVIRT_NETWORK_NAME}"
+LIBVIRT_IMAGE_DIR: "${LIBVIRT_IMAGE_DIR}"
+
+K8S_MASTER_IP: "${K8S_MASTER_IP}"
+K8S_WORKER1_IP: "${K8S_WORKER1_IP}"
+K8S_WORKER2_IP: "${K8S_WORKER2_IP}"
+
+K8S_MASTER_HOST: "${K8S_MASTER_HOST}"
+K8S_WORKER1_HOST: "${K8S_WORKER1_HOST}"
+K8S_WORKER2_HOST: "${K8S_WORKER2_HOST}"
+
+METALLB_RANGE: "${METALLB_RANGE}"
+
+KUBEFOLDER: "/home/{{ ansible_user }}/.kube"
+KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+
+SUDOERS_CONTENT: | 
+${SUDOERS_CONTENT}
+
+
+
+## End of all.xml file

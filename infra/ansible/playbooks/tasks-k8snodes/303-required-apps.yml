@@ -1,0 +1,31 @@
+---
+- name: Install required Kubernetes base apps
+  block:
+    - name: Install Flannel CNI
+      kubernetes.core.k8s:
+        state: present
+        src: https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+        apply: yes
+
+    - name: Install MetalLB
+      kubernetes.core.k8s:
+        state: present
+        src: https://raw.githubusercontent.com/metallb/metallb/v0.14.5/config/manifests/metallb-native.yaml
+        apply: yes
+
+    - name: Install Rancher Local Path Provisioner
+      kubernetes.core.k8s:
+        state: present
+        src: https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
+        apply: yes
+
+    - name: Install Certificate Manager
+      kubernetes.core.k8s:
+        state: present
+        src: https://github.com/cert-manager/cert-manager/releases/download/v1.15.0/cert-manager.yaml
+        apply: yes
+
+  delegate_to: localhost
+  run_once: true
+  environment:
+    KUBECONFIG: /kubeconfig/lab-k8s.yaml

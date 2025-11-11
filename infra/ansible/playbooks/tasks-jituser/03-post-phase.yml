@@ -1,0 +1,21 @@
+---
+- name: Remove ephemeral user from known_hosts
+  known_hosts:
+    name: "{{ inventory_hostname }}"
+    key: "{{ jit_public_key }}"
+    path: "{{ lookup('env','HOME') }}/.ssh/known_hosts"
+    state: absent
+  delegate_to: localhost
+  run_once: true
+
+- name: Remove keys and cert from control node
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ jit_private_key }}"
+    - "{{ jit_public_key }}"
+    - "{{ jit_cert }}"
+    - "{{ jit_key_dir }}"
+  delegate_to: localhost
+  run_once: true

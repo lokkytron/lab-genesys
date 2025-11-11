@@ -1,0 +1,13 @@
+${LAB_DOMAIN}:53 {
+    file /zones/${LAB_DOMAIN}.db
+    reload
+    log
+    errors
+}
+
+.:53 {
+    forward . 8.8.8.8 1.1.1.1
+    cache 30
+    log
+    errors
+}

@@ -1,0 +1,17 @@
+---
+- name: Create VM for {{ node.name }}
+  shell: |
+    sudo virt-install \
+      --name {{ node.name }} \
+      --memory {{ node.ram }} \
+      --vcpus {{ node.cores }} \
+      --os-variant ubuntu24.04 \
+      --disk path={{ img_dir }}/{{ node.name }}-sys.img,bus=virtio \
+      --disk path={{ img_dir }}/{{ node.name }}-cidata.iso,device=cdrom \
+      --network network={{ LIBVIRT_NETWORK_NAME }},model=virtio \
+      --import \
+      --graphics none \
+      --noautoconsole
+  args:
+    executable: /bin/bash
+  become: true

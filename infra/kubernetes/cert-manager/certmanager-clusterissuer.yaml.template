@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: smallstep-acme
+spec:
+  acme:
+    server: https://${HOST_IP}:9000/acme/acme/directory
+    email: you@example.com
+    privateKeySecretRef:
+      name: smallstep-acme-account-key
+    caBundle: ${ROOT_CA_CONTENT}
+    solvers:
+    - http01:
+        ingress:
+          class: nginx

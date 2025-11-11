@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: alert-manager-discord-webhook
+  namespace: telemetry
+type: Opaque
+stringData:
+  url: "https://discord.com/api/webhooks/1410082430290886748/stZeJOJcLqDofRQ5qKDCeCXUtlBrBzMUFd8bK9hDXLIhol4Yk_GXreGCZe7Bqp0gfsMI"
+

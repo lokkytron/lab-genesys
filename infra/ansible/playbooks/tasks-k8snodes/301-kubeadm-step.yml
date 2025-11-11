@@ -1,0 +1,34 @@
+---
+- name: Initialize control plane (master only)
+  command: >
+    kubeadm init
+    --pod-network-cidr=10.244.0.0/16
+    --apiserver-advertise-address={{ K8S_MASTER_IP }}
+  args:
+    creates: /etc/kubernetes/admin.conf
+  delegate_to: "{{ K8S_MASTER_HOST }}"
+  run_once: true
+
+- name: Set up kubeconfig for ephemeral user on master
+  shell: |
+    mkdir -p /home/{{ ansible_user }}/.kube
+    cp /etc/kubernetes/admin.conf /home/{{ ansible_user }}/.kube/config
+    chown {{ ansible_user }}:ansible-ops /home/{{ ansible_user }}/.kube/config
+  delegate_to: "{{ K8S_MASTER_HOST }}"
+  run_once: true
+
+- name: Get kubeadm join command
+  shell: kubeadm token create --print-join-command
+  register: join_cmd
+  delegate_to: "{{ K8S_MASTER_HOST }}"
+  run_once: true
+
+- name: Join worker1 to cluster
+  command: "{{ join_cmd.stdout }}"
+  delegate_to: "{{ K8S_WORKER1_HOST }}"
+  run_once: true
+
+- name: Join worker2 to cluster
+  command: "{{ join_cmd.stdout }}"
+  delegate_to: "{{ K8S_WORKER2_HOST }}"
+  run_once: true

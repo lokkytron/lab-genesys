@@ -1,0 +1,79 @@
+# alertmanager-transformer.yaml
+# Simple webhook transformer for Discord
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook-transformer
+  namespace: telemetry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webhook-transformer
+  template:
+    metadata:
+      labels:
+        app: webhook-transformer
+    spec:
+      containers:
+      - name: transformer
+        image: python:3.9
+        env:
+        - name: DISCORD_WEBHOOK_URL
+          valueFrom:
+            secretKeyRef:
+              name: alert-manager-discord-webhook
+              key: url
+        command:
+        - sh
+        - -c
+        - |
+          pip install requests && cat <<EOF > /app.py
+          import json
+          import os
+          import requests
+          from http.server import HTTPServer, BaseHTTPRequestHandler
+
+          class WebhookHandler(BaseHTTPRequestHandler):
+              def do_POST(self):
+                  content_length = int(self.headers['Content-Length'])
+                  post_data = self.rfile.read(content_length)
+
+                  try:
+                      # Parse Alertmanager payload
+                      alert_data = json.loads(post_data)
+
+                      # Create simple Discord message
+                      message = "🚨 Kubernetes Alert triggered!"
+                      if alert_data.get('alerts'):
+                          first_alert = alert_data['alerts'][0]
+                          summary = first_alert.get('annotations', {}).get('summary', 'Unknown')
+                          message = f"🚨 Alert: {summary}"
+
+                      # Send to Discord
+                      discord_payload = {"content": message}
+                      discord_url = os.environ['DISCORD_WEBHOOK_URL']
+
+                      response = requests.post(
+                          discord_url,
+                          json=discord_payload,
+                          headers={'Content-Type': 'application/json'}
+                      )
+
+                      self.send_response(200)
+                      self.end_headers()
+                      self.wfile.write(b'OK')
+
+                  except Exception as e:
+                      print(f"Error: {e}")
+                      self.send_response(500)
+                      self.end_headers()
+
+          if __name__ == '__main__':
+              server = HTTPServer(('0.0.0.0', 8080), WebhookHandler)
+              print("Webhook transformer running on port 8080")
+              server.serve_forever()
+          EOF
+          python3 /app.py
+        ports:
+        - containerPort: 8080

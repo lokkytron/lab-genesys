@@ -1,0 +1,164 @@
+# =========================
+# Docker-backed Services + Endpoints + Ingress (envsubst-ready)
+# Change LAB_DOMAIN in your environment to update all hostnames
+# =========================
+
+# --- Gitea Service ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitea-docker
+  namespace: docker-services
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+---
+# --- Gitea Endpoint ---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: gitea-docker
+  namespace: docker-services
+subsets:
+  - addresses:
+      - ip: ${HOST_IP}
+    ports:
+      - port: 3000
+---
+# --- Gitea Ingress ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gitea-ingress
+  namespace: docker-services
+  annotations:
+    cert-manager.io/cluster-issuer: smallstep-acme
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - gitea.${LAB_DOMAIN}
+      secretName: gitea-tls
+  rules:
+    - host: gitea.${LAB_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gitea-docker
+                port:
+                  number: 3000
+---
+# --- Registry Service ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry-docker
+  namespace: docker-services
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5000
+      targetPort: 5000
+      protocol: TCP
+---
+# --- Registry Endpoint ---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: registry-docker
+  namespace: docker-services
+subsets:
+  - addresses:
+      - ip: ${HOST_IP}
+    ports:
+      - port: 5000
+---
+# --- Registry Ingress ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: registry-ingress
+  namespace: docker-services
+  annotations:
+    cert-manager.io/cluster-issuer: smallstep-acme
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - registry.${LAB_DOMAIN}
+      secretName: registry-tls
+  rules:
+    - host: registry.${LAB_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: registry-docker
+                port:
+                  number: 5000
+---
+# --- Jenkins Service ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-docker
+  namespace: docker-services
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+# --- Jenkins Endpoint ---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: jenkins-docker
+  namespace: docker-services
+subsets:
+  - addresses:
+      - ip: ${HOST_IP}
+    ports:
+      - port: 8080
+---
+# --- Jenkins Ingress ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jenkins-ingress
+  namespace: docker-services
+  annotations:
+    cert-manager.io/cluster-issuer: smallstep-acme
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - jenkins.${LAB_DOMAIN}
+      secretName: jenkins-tls
+  rules:
+    - host: jenkins.${LAB_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: jenkins-docker
+                port:
+                  number: 8080
+

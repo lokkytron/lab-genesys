@@ -1,0 +1,74 @@
+---
+- name: Verify virtualization support (AMD SVM or Intel VT-x)
+  shell: egrep -q "vmx|svm" /proc/cpuinfo && echo SUPPORTED || (echo "NO-VIRT" && exit 1)
+  register: virt_support
+  changed_when: false
+
+- name: Assert virtualization is supported
+  fail:
+    msg: "Hardware virtualization not available (enable in BIOS/UEFI)."
+  when: virt_support.stdout is search("NO-VIRT")
+
+- name: Ensure APT metadata is updated (once per day)
+  shell: |
+    export DEBIAN_FRONTEND=noninteractive
+    if ! find /var/lib/apt/lists -type f -mtime -1 | grep -q .; then
+      timeout 60 apt-get update
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: false
+  become: true
+
+- name: Install libvirt and tools if missing
+  shell: |
+    MISSING=0
+    for p in {{ libvirt_packages | join(" ") }}; do
+      dpkg -s "$p" >/dev/null 2>&1 || MISSING=1
+    done
+    if [ $MISSING -eq 1 ]; then
+      export DEBIAN_FRONTEND=noninteractive
+      apt install -y {{ libvirt_packages | join(" ") }}
+    fi
+  args:
+    executable: /bin/bash
+  become: true
+
+- name: Enable and start libvirtd
+  service:
+    name: libvirtd
+    state: started
+    enabled: true
+  become: true
+
+- name: Add current user to kvm and libvirt groups
+  user:
+    name: "{{ ansible_user }}"
+    groups: kvm,libvirt
+    append: true
+  become: true
+
+- name: Ensure default libvirt network exists (optional)
+  shell: |
+    if ! virsh net-info default >/dev/null 2>&1; then
+      virsh net-define /usr/share/libvirt/networks/default.xml
+      virsh net-autostart default
+      virsh net-start default
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: false
+  become: true
+
+- name: Ensure {{ LIBVIRT_NETWORK_NAME }} libvirt network exists
+  shell: |
+    if ! virsh net-info {{ LIBVIRT_NETWORK_NAME }} >/dev/null 2>&1; then
+      virsh net-define "{{ lab_path }}/infra/kubernetes/{{ LIBVIRT_NETWORK_NAME }}.xml"
+      virsh net-autostart {{ LIBVIRT_NETWORK_NAME }}
+      virsh net-start {{ LIBVIRT_NETWORK_NAME }}
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: false
+  become: true
+

@@ -1,0 +1,44 @@
+---
+# -------------------------------------------------------------------
+# BLOCK: Provision ephemeral user on target hosts
+# -------------------------------------------------------------------
+- name: Provision ephemeral user on target hosts
+  block:
+
+    - name: Ensure CA user key is present in sshd_config
+      shell: |
+        if ! sudo grep -qxF 'TrustedUserCAKeys /etc/ssh/ca_user.pub' /etc/ssh/sshd_config; then
+          cp /etc/ssh/sshd_config /tmp/sshd_config.tmp
+          echo "TrustedUserCAKeys /etc/ssh/ca_user.pub" | tee -a /tmp/sshd_config.tmp > /dev/null
+          sudo cp /tmp/sshd_config.tmp /etc/ssh/sshd_config
+          sudo rm /tmp/sshd_config.tmp
+          svc=`systemctl list-units --type=service --no-legend | awk '/ssh.*\.service/ {print $1; exit}'`
+          if [ -n "$svc" ]; then
+            sudo systemctl reload "$svc"
+          else
+            echo "No se encontró servicio SSH para reiniciar" >&2
+          fi
+        fi
+    - name: Create ansible-ops group exists
+      shell: sudo /usr/sbin/groupadd -f ansible-ops
+
+    - name: Create ephemeral user
+      shell: sudo /usr/sbin/adduser --disabled-password --gecos '""' --ingroup ansible-ops {{ jit_username }}
+
+    - name: Add ephemeral user to ansible-ops group
+      shell: sudo /usr/sbin/usermod -aG ansible-ops {{ jit_username }}
+
+    - name: Ensure .ssh directory exists for ephemeral user
+      shell: sudo install -d -m 700 -o {{ jit_username }} -g ansible-ops /home/{{ jit_username }}/.ssh
+
+    - name: Validate ephemeral SSH access (dry run)
+      command: whoami
+      register: whoami_result
+      become: false
+      changed_when: false
+
+    - debug:
+        msg: "Ephemeral identity {{ jit_username }} is now active on {{ inventory_hostname }} (checked: {{ whoami_result.stdout }})"
+
+  when: jit_username is defined
+  tags: [jit_provision]

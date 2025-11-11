@@ -1,0 +1,103 @@
+---
+- name: Install apt transport and GPG tools (with lock wait)
+  shell: |
+    while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+      sleep 3
+    done
+    apt update
+    apt install -y apt-transport-https ca-certificates curl gpg
+  args:
+    executable: /bin/bash
+  become: true
+
+- name: Ensure /etc/apt/keyrings exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Download Kubernetes apt key (ASCII)
+  get_url:
+    url: https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key
+    dest: /etc/apt/keyrings/kubernetes-apt-keyring.asc
+    mode: '0644'
+  register: kubernetes_key
+  become: true
+
+- name: Convert Kubernetes apt key to GPG format
+  command: gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /etc/apt/keyrings/kubernetes-apt-keyring.asc
+  args:
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  become: true
+  when: kubernetes_key.changed
+
+- name: Add Kubernetes apt repository
+  copy:
+    dest: /etc/apt/sources.list.d/kubernetes.list
+    content: |
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /
+    mode: '0644'
+  become: true
+
+- name: Update apt cache after adding Kubernetes repo
+  apt:
+    update_cache: true
+  become: true
+
+- name: Install containerd and cri-tools
+  apt:
+    name:
+      - containerd
+      - cri-tools
+    state: present
+  become: true
+
+- name: Enable and start containerd
+  systemd:
+    name: containerd
+    enabled: true
+    state: started
+  become: true
+
+- name: Configure containerd
+  block:
+    - name: Create containerd config directory
+      file:
+        path: /etc/containerd
+        state: directory
+        mode: '0755'
+    - name: Generate default containerd config
+      command: containerd config default
+      register: containerd_config
+      changed_when: false
+    - name: Write config.toml with SystemdCgroup=true
+      copy:
+        dest: /etc/containerd/config.toml
+        content: "{{ containerd_config.stdout | regex_replace('SystemdCgroup = false', 'SystemdCgroup = true') }}"
+        mode: '0644'
+  become: true
+
+- name: Restart containerd
+  service:
+    name: containerd
+    state: restarted
+    enabled: true
+  become: true
+
+- name: Check containerd status
+  command: systemctl is-active containerd
+  register: containerd_status
+  changed_when: false
+  become: true
+
+- name: Verify crictl connectivity
+  command: crictl info
+  register: crictl_info
+  changed_when: false
+  become: true
+
+- debug:
+    msg:
+      - "containerd status: {{ containerd_status.stdout }}"
+      - "crictl info output: {{ crictl_info.stdout | default('No output') }}"

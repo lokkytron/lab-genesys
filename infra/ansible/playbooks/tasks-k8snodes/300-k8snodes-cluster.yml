@@ -1,0 +1,24 @@
+---
+- name: Kubernetes cluster bootstrap
+  hosts: k8snodes
+  become: true
+  gather_facts: true
+  vars:
+    ansible_user: "{{ jit_username }}"
+    ansible_ssh_private_key_file: "{{ jit_private_key }}"
+    ansible_ssh_common_args: >
+      -o StrictHostKeyChecking=no
+      -o UserKnownHostsFile=/dev/null
+      -o IdentitiesOnly=yes
+      -o PreferredAuthentications=publickey
+  environment:
+    KUBEFOLDER: "{{ KUBEFOLDER }}"
+    KUBECONFIG: "{{ KUBECONFIG }}"
+
+  tasks:
+    - import_tasks: 301-kubeadm-step.yml
+    - import_tasks: 302-get-kubeconfig.yml
+    - import_tasks: 303-required-apps.yml
+    - import_tasks: 304-update-apps.yml
+    - import_tasks: 305-ingress-controller.yml
+    - import_tasks: 306-docker-services.yml

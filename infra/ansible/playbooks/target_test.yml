@@ -1,0 +1,30 @@
+---
+- name: Connectivity and sudo capability test
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Wait for ansible_id_rsa to be available
+      wait_for:
+        path: /key_exchange/ansible_id_rsa
+        state: present
+        timeout: 60
+      delegate_to: localhost
+      run_once: true
+
+    - name: Wait for SSH to be ready
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: 22
+        state: started
+        delay: 5
+        timeout: 120
+      delegate_to: localhost
+
+    - name: Checking that ansible entity can use sudo commands
+      shell: sudo /bin/true
+      register: checking_sudo_with_true
+      changed_when: false
+
+    - name: Show results
+      debug:
+        msg: "Test OK! Connection and operability checked."

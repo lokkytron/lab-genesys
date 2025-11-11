@@ -1,0 +1,9 @@
+- name: Re-enable automatic apt services
+  become: true
+  shell: |
+    systemctl unmask apt-daily.service apt-daily-upgrade.service
+    systemctl enable apt-daily.timer apt-daily-upgrade.timer
+    systemctl start apt-daily.timer apt-daily-upgrade.timer
+    sudo systemctl unmask unattended-upgrades.service
+    sudo systemctl enable unattended-upgrades.service
+    sudo systemctl start unattended-upgrades.service

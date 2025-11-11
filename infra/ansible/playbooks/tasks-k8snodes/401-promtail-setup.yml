@@ -1,0 +1,15 @@
+---
+- name: Apply Promtail permissions set
+  kubernetes.core.k8s:
+    state: present
+    src: /kubernetes/promtail/promtail-rbac.yaml
+
+- name: Load Promtial Configmap
+  kubernetes.core.k8s:
+    state: present
+    src: /kubernetes/promtail/promtail-configmap.yaml
+
+- name: Deploy Promtial Daemonset
+  kubernetes.core.k8s:
+    state: present
+    src: /kubernetes/promtail/promtail-daemonset.yaml

@@ -1,0 +1,53 @@
+---
+# -------------------------------------------------------------------
+# BLOCK: Generate ephemeral identity (local)
+# -------------------------------------------------------------------
+- name: Generate ephemeral identity (local)
+  block:
+    - name: Generate JIT working directory
+      set_fact:
+        jit_key_dir: "{{ lookup('env','HOME') }}/.ansible/tmp/{{ jit_username }}"
+
+    - name: Set key and CA paths
+      set_fact:
+        jit_private_key: "{{ jit_key_dir }}/id_ed25519"
+        jit_public_key: "{{ jit_key_dir }}/id_ed25519.pub"
+        jit_cert: "{{ jit_key_dir }}/id_ed25519-cert.pub"
+        jit_ca_url: "{{ lookup('env','CA_URL') }}"
+        jit_ca_root: "{{ lookup('env','ROOT_DST') }}"
+        jit_ca_issuer: "ansible"
+        jit_ca_pass_file: "{{ lookup('env','EXCHANGE_DIR') }}/ansible_pp"
+
+    - name: Ensure key directory exists
+      file:
+        path: "{{ jit_key_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Generate ed25519 keypair
+      command: ssh-keygen -t ed25519 -f "{{ jit_private_key }}" -N ''
+      args:
+        creates: "{{ jit_private_key }}"
+
+    - name: Sign public key with Smallstep CA
+      command: >
+        step ssh certificate "{{ jit_username }}"
+        "{{ jit_public_key }}"
+        --issuer "{{ jit_ca_issuer }}"
+        --sign
+        --ca-url "{{ jit_ca_url }}"
+        --root "{{ jit_ca_root }}"
+        --not-after 30m
+        --no-agent
+        --provisioner-password-file "{{ jit_ca_pass_file }}"
+
+    # Optional: make these facts cacheable if you use a fact cache
+    - name: Mark JIT facts cacheable (optional)
+      set_fact:
+        jit_key_dir: "{{ jit_key_dir }}"
+        jit_private_key: "{{ jit_private_key }}"
+        jit_public_key: "{{ jit_public_key }}"
+        jit_cert: "{{ jit_cert }}"
+  delegate_to: localhost
+  run_once: true
+
