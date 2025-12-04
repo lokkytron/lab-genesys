@@ -27,6 +27,7 @@
       - { ip: "{{ K8S_MASTER_IP }}" , name: "{{ K8S_MASTER_HOST }}" , cores: "2", ram: "4096" }
       - { ip: "{{ K8S_WORKER1_IP }}", name: "{{ K8S_WORKER1_HOST }}", cores: "2", ram: "3072" }
       - { ip: "{{ K8S_WORKER2_IP }}", name: "{{ K8S_WORKER2_HOST }}", cores: "2", ram: "3072" }
+      - { ip: "{{ K8S_WORKER3_IP }}", name: "{{ K8S_WORKER3_HOST }}", cores: "2", ram: "3072" }
 
   tasks:
     - name: DEBUG - Effective user

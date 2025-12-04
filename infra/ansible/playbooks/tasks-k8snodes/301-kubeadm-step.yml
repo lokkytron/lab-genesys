@@ -23,12 +23,6 @@
   delegate_to: "{{ K8S_MASTER_HOST }}"
   run_once: true
 
-- name: Join worker1 to cluster
+- name: Join workers to cluster
   command: "{{ join_cmd.stdout }}"
-  delegate_to: "{{ K8S_WORKER1_HOST }}"
-  run_once: true
-
-- name: Join worker2 to cluster
-  command: "{{ join_cmd.stdout }}"
-  delegate_to: "{{ K8S_WORKER2_HOST }}"
-  run_once: true
+  when: inventory_hostname != K8S_MASTER_HOST

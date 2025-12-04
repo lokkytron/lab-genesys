@@ -80,6 +80,8 @@ services:
       K8S_WORKER1_IP: ${K8S_WORKER1_IP}
       K8S_WORKER2_HOST: ${K8S_WORKER2_HOST}
       K8S_WORKER2_IP: ${K8S_WORKER2_IP}
+      K8S_WORKER3_HOST: ${K8S_WORKER3_HOST}
+      K8S_WORKER3_IP: ${K8S_WORKER3_IP}
 
   gitea:
     image: gitea/gitea:latest

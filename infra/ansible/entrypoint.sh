@@ -71,6 +71,7 @@ ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/
 ${K8S_MASTER_HOST} ansible_host=${K8S_MASTER_IP}
 ${K8S_WORKER1_HOST} ansible_host=${K8S_WORKER1_IP}
 ${K8S_WORKER2_HOST} ansible_host=${K8S_WORKER2_IP}
+${K8S_WORKER3_HOST} ansible_host=${K8S_WORKER3_IP}
 
 [k8snodes:vars]
 ansible_user=ansible

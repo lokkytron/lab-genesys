@@ -68,7 +68,8 @@
             ff02::2 ip6-allrouters
             {{ K8S_MASTER_IP }} {{ K8S_MASTER_HOST }}
             {{ K8S_WORKER1_IP }} {{ K8S_WORKER1_HOST }}
-            {{ K8S_WORKER1_IP }} {{ K8S_WORKER2_HOST }}
+            {{ K8S_WORKER2_IP }} {{ K8S_WORKER2_HOST }}
+            {{ K8S_WORKER3_IP }} {{ K8S_WORKER3_HOST }}
 
       ssh_pwauth: true
       package_update: true
