@@ -18,3 +18,23 @@
     enabled: true
     state: stopped   # keep stopped until kubeadm configures it
   become: true
+
+- name: Ensure kubelet systemd drop-in directory exists
+  file:
+    path: /etc/systemd/system/kubelet.service.d
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Configure kubelet extra args for webhook authz/authn
+  copy:
+    dest: /etc/systemd/system/kubelet.service.d/20-extra-args.conf
+    content: |
+      [Service]
+      Environment="KUBELET_EXTRA_ARGS=--authentication-token-webhook=true --authorization-mode=Webhook"
+  become: true
+
+- name: Reload systemd to pick up kubelet extra args
+  systemd:
+    daemon_reload: true
+  become: true

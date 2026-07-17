@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-server
+  namespace: kube-system
+  labels:
+    k8s-app: metrics-server
+spec:
+  selector:
+    matchLabels:
+      k8s-app: metrics-server
+  template:
+    metadata:
+      labels:
+        k8s-app: metrics-server
+    spec:
+      containers:
+      - name: metrics-server
+        image: k8s.gcr.io/metrics-server/metrics-server:v0.7.2
+        args:
+          - --cert-dir=/tmp
+          - --secure-port=4443
+          - --kubelet-insecure-tls
+          - --kubelet-preferred-address-types=InternalIP,Hostname
+        ports:
+        - name: main-port
+          containerPort: 4443
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: main-port
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: main-port
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          periodSeconds: 10
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: metrics-server
+      priorityClassName: system-cluster-critical
